@@ -1,0 +1,17 @@
+require 'nokogiri'
+require 'open-uri'
+
+#doc = Nokogiri::HTML(open("https://www.google.co.za/search?q=print+cape+town&start=00"))
+doc = File.open("nokodata") { |f| Nokogiri::XML(f) }
+
+
+#puts doc
+def clean(x)
+  x[6..-9]
+end
+
+selist = doc.css("div.s").css("cite")
+selist.each{ |x| puts clean(x.to_s) }
+
+
+puts "hello"[1]
