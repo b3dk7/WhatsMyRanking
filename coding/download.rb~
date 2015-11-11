@@ -1,0 +1,8 @@
+require 'nokogiri'
+require 'open-uri'
+
+
+
+doc = Nokogiri::HTML(open("https://www.google.co.za/search?q="+keywords+"&start=00"))
+
+puts doc
