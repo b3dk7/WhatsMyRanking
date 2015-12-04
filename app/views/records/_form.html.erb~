@@ -1,0 +1,36 @@
+<%= form_for @record do |f| %>
+ 
+  <% if @record.errors.any? %>
+    <div id="error_explanation">
+      <h2>
+        <%= pluralize(@record.errors.count, "error") %> prohibited
+        this record from being saved:
+      </h2>
+      <ul>
+        <% @record.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+ 
+  <p>
+    <%= f.label :your_page %><br>
+    <%= f.text_field :url %>
+  </p>
+ 
+  <p>
+    <%= f.label :Google_keywords %><br>
+    <%= f.text_field :keywords %>
+  </p>
+  <p>
+    <%= f.radio_button :servicetype, 'rank_and_tips', :checked => true %>
+    <%= f.label :rank_and_tipe, value: "Rank and SEO tips" %><br>
+    <%= f.radio_button :servicetype, 'just_tips' %>
+    <%= f.label :just_tips, value: "Just SEO tips (faster)" %>
+  </p>
+  <p>
+    <%= f.submit value: "Go!", class: "btn btn-primary btn-md" %>
+  </p>
+ 
+<% end %>

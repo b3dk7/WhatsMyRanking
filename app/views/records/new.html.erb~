@@ -1,0 +1,3 @@
+
+  <h1>Find out your Google ranking and improve it! - this is effectively free Search Engine Optimization ( SEO )</h1>
+  <%= render 'form' %>

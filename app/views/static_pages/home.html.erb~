@@ -1,0 +1,15 @@
+<h1>Welcome to WhatsMyRanking</h1>
+
+<h2>Track your ranking with the mayor search engines including Google, Yahoo, Bing and more</h2>
+
+
+
+
+<h3>Fill out the form below and we will return your ranking
+<%= render 'records/form' record: Record.new %>
+
+
+
+<h3>Check out our advcanced features in the video below</h3>
+<button>signup</button>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/jGskUJMN5t4" frameborder="0" allowfullscreen></iframe>

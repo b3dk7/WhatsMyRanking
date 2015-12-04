@@ -1,0 +1,150 @@
+require 'uri'
+require 'nokogiri'
+require 'open-uri'
+
+module RecordsHelper
+
+  def fetch_ranking(url, keywords, servicetype)
+    #returnstr = ""
+    $url = url
+    $se_found_url = ""
+    keywords = keywords.gsub(","," ").squeeze(" ").gsub(" ","+")
+
+    $seoresult = Hash.new
+    # on the page seo
+    def otpseo(x)
+      start = Time.new
+      pagesource = Nokogiri::HTML(open(x))
+      finish = Time.new
+      #html
+      $seoresult["title"] = pagesource.css("title").inner_html
+      
+      
+      $seoresult["meta"] = pagesource.css("meta[name=description]").attribute("content").to_s
+      $seoresult["structure"]
+      $seoresult["headers"] = pagesource.css("h1").inner_html
+      $seoresult["stuffing"]
+      $seoresult["alt_tag"]
+      
+      
+      
+      #architecture
+      
+      $seoresult["url"] = x
+      $seoresult["speed"] = (finish - start).round(2)
+      $seoresult["crawl"]
+      $seoresult["https"] = x[0..4] == "https"
+      
+      
+
+      #return "url: " + x + "\ntitle: " + pagesource.css("title").to_s.sub("</title>","") + "meta description: " + meta(pagesource.css("meta").to_s) + "<h1>: " + pagesource.css("h1").to_s.sub("</h1>","")
+
+      
+    end
+
+
+
+
+    def meta(x)
+      tags_h_t = x
+      
+      startindex = tags_h_t.index('<meta name="description" content=')
+      
+      if !startindex.nil?
+        tags_t = tags_h_t[startindex..-1]
+        endindex = tags_t.index('>')
+        tags = tags_t[0..endindex-2]
+        return tags.sub('<meta name="description" content="','')
+      end
+      return ""
+    end
+
+
+
+
+
+    def compare(selink)
+
+      selink[$url.downcase.sub("www.","").sub("http://","").sub("https://","")]
+
+    end
+
+    counter = 0
+    rank = 0
+    found = false
+    #doc = Nokogiri::HTML(open("https://yahoo.com"))
+    if servicetype == "rank_and_tips"
+
+
+      
+      for i in 0..15
+
+        if found
+          break
+        end
+        
+        #ss= "https://www.google.com/search?q="+keywords+"&start="+i.to_s+"0"
+        #ss = "https://www.google.com/search?q="+"something+else"+"&start="+i.to_s+"0"
+        ##ss = "https://www.yahoo.com"
+        #doc = Nokogiri::HTML(open("https://google.com"))
+        doc = Nokogiri::HTML(open("https://www.google.com/search?q="+keywords+"&start="+i.to_s+"0"))
+        listing = doc.css("li.g")
+        urls = listing.css("h3.r")
+
+        
+
+
+        for i in 0..urls.length-1
+          withtail = urls[i].to_s.sub('<h3 class="r"><a href="/url?q=','')
+          link = URI::decode(withtail[0..withtail.index('&amp')-1])
+          setitle = urls[i].css("a").to_s
+          setitle = setitle[setitle.index('">')+2..-1].gsub("&amp;","").sub("</a>","").gsub("<b>","").gsub("</b>","")
+          if (link =~ URI::regexp) == 0
+            counter = counter+1
+            
+            #if counter < 11
+            #otpseo(link)
+            #else
+            puts link
+            #end
+            #puts setitle
+            if compare(link)# || compare(setitle)
+              found = true
+              rank = counter
+              $se_found_url = link
+              break
+            end
+          end
+          
+          
+          if !doc.css("p#ofr").empty?
+            
+            break
+            
+          end
+        end
+        if rank > 0
+          returnstr = $se_found_url + " is ranked number " + rank.to_s
+          
+        else
+          returnstr =  "sorry we could not find you"
+        end
+      end
+       
+    end
+    if $url["http://"] || $url["https://"]
+      tips = otpseo($url)
+    else
+      begin
+        tips = otpseo("http://"+$url)
+      rescue
+        tips = otpseo("https://"+$url)
+      end
+    end
+    #return returnstr + tips
+    return $seoresult
+
+
+  end
+  
+end

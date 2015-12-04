@@ -1,0 +1,294 @@
+require 'uri'
+require 'nokogiri'
+require 'open-uri'
+require 'net/http'
+
+module RecordsHelper
+
+  def sentence_style(x)
+    if x.length == 1
+      return x[0]
+    elsif x.length == 2
+      return x[0] + " and " + x[1]
+    else
+      multiple_words = ""
+      x.each do |i|
+	multiple_words = multiple_words + i + ", "
+      end
+    end
+  end
+  
+  def microformats_checker(classes)
+    classes.split.each do |i|
+      if ['hatom', 'hentry', 'hfeed', 'hresume', 'hreview', 'vcalendar', 'vcard', 'vevent', 'xoxo'].include? i
+	return true
+      end
+    end
+    return false
+  end
+  
+  def count_em(string, substring)
+    string.scan(/(?=#{substring})/).count
+  end
+  
+  def add_spaces(x)
+    return " "+x
+  end
+  
+  def analysis_one(hash, text, keywords, length_limit=1000, space=false)
+    if text.empty?
+      hash["content"] = "missing!!!"
+      hash["content_color"] = "red"
+    else
+      hash["content"] = text
+      hash["content_color"] = "black"
+    end
+    hash["keyword_presence"] = Hash.new
+    keywords.each do |i|
+      hash["keyword_presence"][i] = !text.downcase[space ? " "+i.downcase : i.downcase].nil?
+    end
+    
+    matches = 0
+    hash["keyword_presence"].each do |i|
+      if i[1] == true
+	matches = matches+1
+      end
+    end	
+    
+    hash["coverage"] = Hash.new
+    if !hash["keyword_presence"].empty?
+      hash["coverage"]["value"] = (matches.to_f / hash["keyword_presence"].length * 100).round(0)
+      hash["coverage"]["color"] = hash["coverage"]["value"] == 100 ? "green" : hash["coverage"]["value"] > 0 ? "amber" : "red"
+    else
+      hash["coverage"]["value"] = 0
+      hash["coverage"]["color"] = "black"
+    end
+    #if hash["coverage"]["value"] == 1
+      
+    
+    
+    
+    
+	
+    hash["length"] = text.length
+    if hash["length"] == 0
+      hash["length_color"] = "red"
+      #hash["length_comment"] = " - try keeping it under " + length_limit.to_s
+    elsif hash["length"] < length_limit
+      hash["length_color"] = "green"
+      hash["length_comment"] = " - good length"
+    else
+      hash["length_color"] = "amber"
+      hash["length_comment"] = " - try keeping it under " + length_limit.to_s
+    end
+    
+    return hash
+  end
+  
+  
+  def seo_anal(url, keywords)
+    red = "red"
+    amber = "amber"
+    green = "green"
+    
+    keywords = keywords.gsub(","," ").squeeze(" ")
+    
+
+    $seoresult = Hash.new
+    $seoresult["keywords"] = keywords.split(" ")
+    
+    # on the page seo
+    def otpseo(x)
+      start = Time.new
+      pagesource = Nokogiri::HTML(open(x))
+      finish = Time.new
+      
+      #html
+      $seoresult["title"] = Hash.new
+      $seoresult["title"] = analysis_one($seoresult["title"], pagesource.css("title").inner_html, $seoresult["keywords"], 70)
+      
+      #meta
+      metalimit = 155
+      $seoresult["meta"] = Hash.new
+      begin
+	$seoresult["meta"] = analysis_one($seoresult["meta"], pagesource.css("meta[name=description]").attribute("content").to_s, $seoresult["keywords"], metalimit)
+      rescue
+	$seoresult["meta"] = analysis_one($seoresult["meta"], "", $seoresult["keywords"], metalimit)
+      end
+      
+      #headers
+      $seoresult["headers"] = Hash.new
+      $seoresult["headers"] = analysis_one($seoresult["headers"], pagesource.css("h1").inner_html.to_s.gsub(/<[^>]*>/, ""), $seoresult["keywords"], 70)
+      
+      
+      #structured data
+      s_d_screen = Array.new
+      
+      if !pagesource.css("script[type='application/ld+json']").empty?
+	s_d_screen << "JSON-LD"
+      end
+      
+      htmlelements =pagesource.to_s.gsub(/>[^>]*</, "><").gsub(/\="[^"]*"/,"").gsub(/<!--[^>]*-->/, "").gsub(/<\![^>]>/,"").gsub(/<\![^>]*>/,"").scan(/<[^ >]*/).map { |i| i.gsub("</","").gsub("<","") }
+      htmlelements.uniq!
+      
+      #htmlelements.each do |i|
+	#if pagesource.css
+      atr = Array.new
+      htmlelements.each do |elements|
+	begin
+	pagesource.css(elements).each do |singleelement|
+	  
+	  
+	  #checking for microformats support
+	  if !singleelement.attribute("class").nil?
+	    if microformats_checker(singleelement.attribute("class").to_s)
+	      s_d_screen << "microformats"
+	    end
+	  end
+	  #checking for RDFa support
+	  if !singleelement.attribute("property").nil? || !singleelement.attribute("resource").nil? || !singleelement.attribute("prefix").nil? || !singleelement.attribute("typeof").nil? || !singleelement.attribute("vocab").nil?
+	    s_d_screen << "RDFa"
+	  end
+	  
+	  #checking for Microdata support
+	  if !singleelement.attribute("itemscope").nil? || !singleelement.attribute("itemtype").nil? || !singleelement.attribute("itemid").nil? || !singleelement.attribute("itemprop").nil? || !singleelement.attribute("itemref").nil?
+	    s_d_screen << "Microdata"
+	  end
+	end
+	rescue
+	end
+      end
+      s_d_screen.uniq!
+      $seoresult["structure"]=Hash.new
+      
+      
+      $seoresult["structure"]["content"] = ""
+      if s_d_screen.empty?
+	$seoresult["structure"]["content"] = "You do not seem to support any form of structured data"
+	$seoresult["structure"]["color"] = "red"
+      else
+	$seoresult["structure"]["content"] = "Great Job, you seem to be using " + sentence_style(s_d_screen)
+	$seoresult["structure"]["color"] = "green"
+      end
+      
+      
+      
+      #stuffing
+      $seoresult["stuffing"] = Hash.new
+      $seoresult["keywords"].each do |i|
+	$seoresult["stuffing"][i] = count_em(pagesource.to_s.downcase, i.downcase)
+      end
+      
+      
+      
+      
+      #alt tag
+      $seoresult["alt_tag"] = Hash.new
+      #$seoresult["alt_tag"] = pagesource.css("img").attribute("alt").length.to_f / pagesource.css("img").length
+      alt_counter = 0
+      alt_string = ""
+      images = pagesource.css("img")
+      images.each do |i|
+	if i.attribute("alt").to_s != ""
+	  alt_counter = alt_counter + 1
+	  alt_string = alt_string + i.attribute("alt").to_s + " "
+	end
+      end
+      
+
+      #$seoresult["alt_tag"]["string"] = alt_string
+      $seoresult["alt_tag"]["tag_occurance"] = alt_counter.to_f / images.length
+      $seoresult["alt_tag"] = analysis_one($seoresult["alt_tag"], alt_string, $seoresult["keywords"])
+
+      
+      
+      #architecture
+      
+      #url
+      $seoresult["url"] = Hash.new
+      $seoresult["url"] = analysis_one($seoresult["url"], x, $seoresult["keywords"], 115)
+      
+      #url canonicalization
+      
+      
+      
+      $seoresult["url_canon"] = Hash.new
+      if $accepted_urls.length > 1
+	$seoresult["url_canon"]["color"] = "red"
+	$seoresult["url_canon"]["content"] = "Your site can be accessed using multiple URL's ("+$accepted_urls.join(", ")+"). Search engines will treat each domain as a seperate page (this is bad)! To solve the issue, redirect URL's accordingly using HTTP 301 responses (ask your web developer about this)"
+      else
+	$seoresult["url_canon"]["color"] = "green"
+	$seoresult["url_canon"]["content"] = "very well done! all URL's redirect to "+$accepted_urls[0]
+      end
+      #speed
+      $seoresult["speed"] = Hash.new
+      $seoresult["speed"]["time"] = (finish - start).round(2)
+      speedtip = "try reducing your amount of http requests or upgrade your server hardware"
+      if $seoresult["speed"]["time"] < 2
+	$seoresult["speed"]["color"] = "green"
+	$seoresult["speed"]["comment"] = "your page loads fast, well done"
+      elsif $seoresult["speed"]["time"] < 4
+	$seoresult["speed"]["color"] = "amber"
+	$seoresult["speed"]["comment"] = "your page is slow, " + speedtip
+      else
+	$seoresult["speed"]["color"] = "red"
+	$seoresult["speed"]["comment"] = "your page is very slow, " + speedtip
+      end
+	
+      
+      #https
+      $seoresult["security"] = Hash.new
+      if x[0..4] == "https"
+        $seoresult["security"]["protocol"] = "HTTPS"
+	$seoresult["security"]["comment"] = "you are limiting connections to HTTPS, excellent"
+	$seoresult["security"]["color"] = "green"
+      else
+	$seoresult["security"]["protocol"] = "HTTP"
+        $seoresult["security"]["comment"] = "you are currently allowing HTTP access, limiting access to HTTPS (a more secure version of the HTTP protocol) will help imporve your serch engine ranking"
+	$seoresult["security"]["color"] = "amber"
+      end
+      
+      #repetition
+      $seoresult["repetition"] = Array.new
+      pagesource.css("a").each do |link|
+	$seoresult["repetition"] << link.attribute("href").to_s
+      end
+    end
+
+    
+    
+    
+    #URL magic
+    stripped_url = url.gsub("https://","").gsub("http://","").gsub("www.","")
+    
+    
+    url_variations = ["http://","https://","http://www.","https://www."]
+    
+    #url_variations2 = ["http://","http://www."]
+    
+    $accepted_urls = Array.new
+    
+    url_variations.each do |i|
+      begin
+	url_string = i+stripped_url
+	url = URI.parse(url_string)
+	req = Net::HTTP.new(url.host, url.port)
+	req.use_ssl = (url.scheme == 'https')
+	path = url.path if url.path.present?
+	res = req.request_head(path || '/')
+	if res.code == "200"
+	  $accepted_urls << url_string
+	end
+      rescue
+      end
+    end
+	
+    
+    #ensuring url if formatted correctly and if not then we try to connect with http and if that fails we try https
+    otpseo($accepted_urls[0])
+    
+    return $seoresult
+
+
+  end
+end

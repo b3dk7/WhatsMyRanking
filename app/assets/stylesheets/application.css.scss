@@ -13,3 +13,51 @@
  *= require_tree .
  *= require_self
  */
+@import "bootstrap-sprockets";
+@import "bootstrap";
+
+
+
+
+#report{
+margin-top: 2em;
+}
+footer, .changesearch{
+  margin-top:5em;
+}
+
+.checker{
+  margin-left: auto;
+  margin-right: auto;
+} 
+
+
+.red{
+  color: red;
+}
+.amber{
+  color: #FF6600;
+}
+.green{
+  color: green;
+}
+.section{
+  font-weight: bold;
+}
+
+#logo{
+  font-size: 2em;
+  margin-right: 0.6em;
+}
+
+#url{
+  color: #9376cf;
+}
+#keywords{
+  color: #64cd8b;
+  font-style: italic;
+}
+#reddit{
+  position: relative;
+  top: -11px;
+}

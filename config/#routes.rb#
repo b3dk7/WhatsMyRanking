@@ -1,14 +1,5 @@
 Rails.application.routes.draw do
-  get 'static_pages/home'
-  #get 'records/new'
-  get 'users/new'
-
-  root 'records#new'
-
-  get 'search-engine-optimization-seo-and-google-ranking'=> 'records#new'
-  resources :users
-  resources :records
-  #root 'search-engine-optimization-seo-and-google-ranking'
+  
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
 

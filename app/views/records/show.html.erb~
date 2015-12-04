@@ -1,0 +1,3 @@
+<h1>We have ranked and SEO analyzed <%= @record.url %> based on a search for "<%= @record.keywords %>"</h1>
+<%= fetch_ranking(@record.url, @record.keywords, @record.servicetype) %><br>
+<%= link_to "Change my search", root_path, class:"btn btn-primary btn-md"%>

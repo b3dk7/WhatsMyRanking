@@ -1,14 +1,41 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Wmr</title>
-  <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
-  <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
-  <%= csrf_meta_tags %>
-</head>
-<body>
+  <head>
+    <title>Free Search Engine Optimization ( SEO ) and Google ranking | whatsmyranking.com</title>
+    <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
+    <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
+    <%= csrf_meta_tags %>
+    <meta name="description" content="whatsmyranking.com provides web site owners with free tips on how to improve their search eingine ranking ( also knows as Search Engine Optimization or SEO ). Currently we only povide preformance results for Google, but we will include other search engines such as Bing, Yahoo in the near future">
+    <%= favicon_link_tag '/wmr.ico' %>
+  </head>
+  <body>
+    <div class="container">
 
-<%= yield %>
 
-</body>
+      <header>
+	<nav>
+	  <%= link_to "WhatsMyRanking", root_path, id:"logo"%>
+	  <a href="mailto:info@whatsmyranking.com">Contact</a>
+	</nav>
+
+      </header>
+
+
+
+      <%= yield %>
+
+
+      <footer>
+	<nav>
+	  <a href="https://twitter.com/share" class="twitter-share-button"{count} data-via="benedikt_boehm" data-size="large">Tweet</a>
+	  <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+	  
+	  
+	  <a href="//www.reddit.com/submit" onclick="window.location = '//www.reddit.com/submit?url=' + encodeURIComponent(window.location); return false"> <img src="//www.redditstatic.com/spreddit8.gif" alt="submit to reddit" border="0" id="reddit" /> </a>
+	</nav>
+	
+      </footer>
+
+    </div>
+  </body>
 </html>

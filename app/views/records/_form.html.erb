@@ -1,0 +1,39 @@
+<%= form_for @record do |f| %>
+ 
+  <% if @record.errors.any? %>
+    <div id="error_explanation">
+      <h2>
+        <%= pluralize(@record.errors.count, "error") %> prohibited
+        this record from being saved:
+      </h2>
+      <ul>
+        <% @record.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+ 
+  <p>
+    <%= f.label :your_page %> e.g. "example.com"<br>
+    <%= f.text_field :url %>
+  </p>
+ 
+  <p>
+    <%= f.label :Search_keywords %> e.g. "apple pair banana"<br>
+    <%= f.text_field :keywords %>
+  </p>
+  
+  <%= textcaptcha_fields(f) do %>
+  <div class="field">
+    <%= f.label :textcaptcha_answer, @record.textcaptcha_question %><br/>
+    <%= f.text_field :textcaptcha_answer, :value => '' %>
+  </div>
+<% end %>
+  
+  
+  <p>
+    <%= f.submit value: "Go!", class: "btn btn-primary btn-md" %>
+  </p>
+ 
+<% end %>

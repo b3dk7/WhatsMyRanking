@@ -1,0 +1,24 @@
+class RecordsController < ApplicationController
+  def new
+    @record = Record.new
+    @record.textcaptcha
+  end
+  def create
+    @record = Record.new(record_params)    
+    if @record.save
+      redirect_to @record
+    else
+      render 'new'
+    end
+  end
+
+  def show
+    @record = Record.find(params[:id])
+  end
+
+
+  private
+  def record_params
+    params.require(:record).permit(:url, :keywords, :searchengine, :servicetype)
+  end
+end
