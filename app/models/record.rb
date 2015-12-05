@@ -8,7 +8,7 @@ class Record < ActiveRecord::Base
   
   validates :url, presence: true
   validates :keywords, presence: true
-  
+  validate  :url_regex
   
   def perform_textcaptcha?
     false
@@ -20,5 +20,22 @@ class Record < ActiveRecord::Base
     
     self.ranking = 22
   end
+  
+  
+ #massive DOS defence!!!!! think twice about removing
+ def url_regex
+    if url.match(/whatsmyranking.com\/records\/.*/)
+      errors.add :url, "This URL is blocked"
+    end
+  end
+  
 
 end
+
+
+
+
+    
+    
+    
+     

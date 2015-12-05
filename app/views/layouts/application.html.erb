@@ -7,6 +7,25 @@
     <%= csrf_meta_tags %>
     <meta name="description" content="whatsmyranking.com provides web site owners with free tips on how to improve their search eingine ranking ( also knows as Search Engine Optimization or SEO ). Currently we only povide preformance results for Google, but we will include other search engines such as Bing, Yahoo in the near future">
     <%= favicon_link_tag '/wmr.ico' %>
+    
+    <!-- Piwik -->
+    <script type="text/javascript">
+      var _paq = _paq || [];
+      _paq.push(['trackPageView']);
+      _paq.push(['enableLinkTracking']);
+      (function() {
+	var u="//46.101.248.221/";
+	_paq.push(['setTrackerUrl', u+'piwik.php']);
+	_paq.push(['setSiteId', 2]);
+	var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+	g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+      })();
+    </script>
+    <noscript><p><img src="//46.101.248.221/piwik.php?idsite=2" style="border:0;" alt="" /></p></noscript>
+    <!-- End Piwik Code -->
+    
+    
+    
   </head>
   <body>
     <div class="container">
