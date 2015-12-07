@@ -4,6 +4,9 @@ require 'open-uri'
 require 'net/http'
 
 module RecordsHelper
+  def strip_it(x)
+    x.gsub("https://","").gsub("http://","").gsub("www.","")
+  end
 
   def sentence_style(x)
     if x.length == 1
@@ -35,17 +38,28 @@ module RecordsHelper
     return " "+x
   end
   
-  def analysis_one(hash, text, keywords, length_limit=1000, space=false)
+  def analysis_one(hash, text, keywords, length_limit=1000, urll=false)
     if text.empty?
       hash["content"] = "missing!!!"
       hash["content_color"] = "red"
     else
       hash["content"] = text
       hash["content_color"] = "black"
+    
+    text.downcase!
+    client_keywords = text.split(/[, ;.&!?()\-\[\]]/).uniq.reject{|s| s.to_s == ''}
+
     end
     hash["keyword_presence"] = Hash.new
     keywords.each do |i|
-      hash["keyword_presence"][i] = !text.downcase[space ? " "+i.downcase : i.downcase].nil?
+      if urll
+	hash["keyword_presence"][i] = text.include? i.downcase
+      else
+	begin
+	hash["keyword_presence"][i] = client_keywords.include? i.downcase
+	rescue
+	end
+      end
     end
     
     matches = 0
@@ -63,13 +77,7 @@ module RecordsHelper
       hash["coverage"]["value"] = 0
       hash["coverage"]["color"] = "black"
     end
-    #if hash["coverage"]["value"] == 1
-      
-    
-    
-    
-    
-	
+
     hash["length"] = text.length
     if hash["length"] == 0
       hash["length_color"] = "red"
@@ -180,33 +188,34 @@ module RecordsHelper
       end
       
       
-      
-      
-      #alt tag
-      $seoresult["alt_tag"] = Hash.new
-      #$seoresult["alt_tag"] = pagesource.css("img").attribute("alt").length.to_f / pagesource.css("img").length
-      alt_counter = 0
-      alt_string = ""
+      #images
+      $seoresult["images"] = Hash.new
       images = pagesource.css("img")
       images.each do |i|
-	if i.attribute("alt").to_s != ""
-	  alt_counter = alt_counter + 1
-	  alt_string = alt_string + i.attribute("alt").to_s + " "
+	$seoresult["images"][/[^\/]+$/.match(i.attribute("src").to_s)] = i.attribute("alt").to_s
+      end
+
+      
+
+      #repetition
+      $seoresult["repetition"] = Array.new
+      
+      
+      
+      pagesource.css("a").each do |link|
+	link = link.attribute("href").to_s
+	
+	if ((link[0,1] != "#" && link["https://"].nil? && link["http://"].nil?) || link[strip_it(x).sub(/\/.*/,"")]) && (!$accepted_urls.include?(link[0..-2]) && !$accepted_urls.include?(link) ) && link != "/" && link 
+	$seoresult["repetition"] << link
 	end
       end
-      
-
-      #$seoresult["alt_tag"]["string"] = alt_string
-      $seoresult["alt_tag"]["tag_occurance"] = alt_counter.to_f / images.length
-      $seoresult["alt_tag"] = analysis_one($seoresult["alt_tag"], alt_string, $seoresult["keywords"])
-
-      
+      #$seoresult["repetition"] = $accepted_urls.include? "https://www.facebook.com"
       
       #architecture
       
       #url
       $seoresult["url"] = Hash.new
-      $seoresult["url"] = analysis_one($seoresult["url"], x, $seoresult["keywords"], 115)
+      $seoresult["url"] = analysis_one($seoresult["url"], x, $seoresult["keywords"], 115, true)
       
       #url canonicalization
       
@@ -248,18 +257,14 @@ module RecordsHelper
 	$seoresult["security"]["color"] = "amber"
       end
       
-      #repetition
-      $seoresult["repetition"] = Array.new
-      pagesource.css("a").each do |link|
-	$seoresult["repetition"] << link.attribute("href").to_s
-      end
+      
     end
 
     
     
     
     #URL magic
-    stripped_url = url.gsub("https://","").gsub("http://","").gsub("www.","")
+    stripped_url = strip_it(url)
     
     
     url_variations = ["http://","https://","http://www.","https://www."]
@@ -286,6 +291,7 @@ module RecordsHelper
     
     #ensuring url if formatted correctly and if not then we try to connect with http and if that fails we try https
     otpseo($accepted_urls[0])
+
     
     return $seoresult
 

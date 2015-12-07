@@ -24,7 +24,7 @@ class Record < ActiveRecord::Base
   
  #massive DOS defence!!!!! think twice about removing
  def url_regex
-    if url.match(/whatsmyranking.com\/records\/.*/)
+    if url.downcase.match(/whatsmyranking.com\/records\/.*/) || url.downcase.match(/46\.101\.115\.155\/records\/.*/) || url.downcase["localhost"]
       errors.add :url, "This URL is blocked"
     end
   end

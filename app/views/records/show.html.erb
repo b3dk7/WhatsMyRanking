@@ -31,7 +31,21 @@
 
 <h3>Images</h3>
 Images are not necessary for a good ranking, however in case you do have images, it is important to give them descriptive file names and well as "alt" attribute. "atl" attributes are used in 
-<span class="section">Proportion of images that have "alt" tags:</span><%= seoanal["alt_tag"] %>
+
+<table>
+<tr>
+    <td><span class="table_head">Image Filename</span></td>
+    <td><span class="table_head">Image Description</span></td>
+  </tr>
+<% seoanal["images"].each do |key, value| %>
+  <tr>
+    <td> <%= key %> </td>
+    <td> <span class="d"><%= value %><span> </td>
+  </tr>
+<% end %>
+</table>
+
+
 
 <h3>Uniqueness of title, description and main header across your site</h3>
 <%= seoanal["repetition"] %>
