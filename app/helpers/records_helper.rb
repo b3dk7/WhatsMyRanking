@@ -4,6 +4,32 @@ require 'open-uri'
 require 'net/http'
 
 module RecordsHelper
+    
+  def find_root(x)
+    if !x[8..-1].index("/").nil?
+    x[0..x[8..-1].index("/")+7]
+    else
+    x
+    end
+  end 
+  def url_extention(x)
+    if !x[8..-1].index("/").nil?
+      x[x[8..-1].index("/")+8..-1]
+    else
+      x
+    end
+  end
+  def fetch(uri_str)
+    response = Net::HTTP.get_response(URI(uri_str))
+    case response
+    when Net::HTTPSuccess then
+      return uri_str
+    when Net::HTTPRedirection then
+      return response['location']
+    else
+      return nil
+    end
+  end
   def strip_it(x)
     x.gsub("https://","").gsub("http://","").gsub("www.","")
   end
@@ -111,7 +137,7 @@ module RecordsHelper
       pagesource = Nokogiri::HTML(open(x))
       finish = Time.new
       
-      #html
+      #Title
       $seoresult["title"] = Hash.new
       $seoresult["title"] = analysis_one($seoresult["title"], pagesource.css("title").inner_html, $seoresult["keywords"], 70)
       
@@ -126,7 +152,7 @@ module RecordsHelper
       
       #headers
       $seoresult["headers"] = Hash.new
-      $seoresult["headers"] = analysis_one($seoresult["headers"], pagesource.css("h1").inner_html.to_s.gsub(/<[^>]*>/, ""), $seoresult["keywords"], 70)
+      $seoresult["headers"] = analysis_one($seoresult["headers"], pagesource.css("h1").inner_html.to_s.gsub(/<[^>]*>/, ""), $seoresult["keywords"], 160)
       
       
       #structured data
@@ -199,16 +225,90 @@ module RecordsHelper
 
       #repetition
       $seoresult["repetition"] = Array.new
-      
-      
-      
+      super_list = Array.new
+      root_url = find_root($accepted_urls[0])
       pagesource.css("a").each do |link|
 	link = link.attribute("href").to_s
 	
-	if ((link[0,1] != "#" && link["https://"].nil? && link["http://"].nil?) || link[strip_it(x).sub(/\/.*/,"")]) && (!$accepted_urls.include?(link[0..-2]) && !$accepted_urls.include?(link) ) && link != "/" && link 
-	$seoresult["repetition"] << link
+	
+	
+	if ((link[0,1] != "#" && link["https://"].nil? && link["http://"].nil?) || link[strip_it(x).sub(/\/.*/,"")]) && (!$accepted_urls.include?(link[0..-2]) && !$accepted_urls.include?(link) ) && link != "/" && link != "" && link["#"].nil? && link[0..1] != "//" && link["@"].nil?
+	  
+	  # if it ts s soomething like "http://bla.com" or "https://bla.com"
+	  if !link["http://"].nil? || !link["https://"].nil?
+	    link = link
+	  #if ist something like "contacts.php"
+	  elsif  link[0] != "/"
+	    link = root_url +"/"+link
+	    
+	    
+	  #if its something like "/Contacts.php"
+	  else 
+	    link = root_url + link
+	  end
+	  
+	  link_ending=url_extention(link)
+	  if !link_ending["contact"].nil? || !link_ending["about"].nil? || !link_ending["career"].nil? || !link_ending["privacy"].nil? || !link_ending["jobs"].nil? || !link_ending["login"].nil? || !link_ending["shop"].nil? || !link_ending["terms"].nil? || !link_ending["conditions"].nil? || !link_ending["policy"].nil? || !link_ending["community"].nil? || !link_ending["pricing"].nil? || !link_ending["help"].nil? || !link_ending["faq"].nil? || !link_ending["press"].nil? || !link_ending["blog"].nil? || !link_ending["feedback"].nil? || !link_ending["news"].nil?
+	    super_list << link
+	  end
+	  
+	  
+	  $seoresult["repetition"] << link
 	end
       end
+      
+      
+      #choose from the superlist if it exists otherwise use the normal list
+      if !super_list.empty?
+	$seoresult["repetition"] = super_list[0]#.uniq
+	another_page = super_list[0]
+      else
+	$seoresult["repetition"][0]#.uniq!
+	another_page = $seoresult["repetition"][0]
+      end
+      
+      if !another_page.nil?
+      
+	repetition_text = "we visited another page on your site ("+another_page+") and noticed, you "
+	
+	#"do not repeat"
+	pagesource2 = Nokogiri::HTML(open(another_page))      
+	if pagesource2.css("title").inner_html == pagesource.css("title").inner_html
+	  $seoresult["title"]["other"] = repetition_text+"repeat the same title"
+	  $seoresult["title"]["other_color"] = "red"
+	else
+	  $seoresult["title"]["other"] = repetition_text+"change your title, well done"
+	  $seoresult["title"]["other_color"] = "green"
+	end
+	
+	      
+	#meta uniquenesss      
+	begin
+	  meta_one= pagesource.css("meta[name=description]").attribute("content").to_s
+	rescue
+	  meta_one= ""
+	end
+	begin
+	  meta_two= pagesource2.css("meta[name=description]").attribute("content").to_s
+	rescue
+	  meta_two= ""
+	end
+	if meta_one == meta_two
+	  $seoresult["meta"]["other"] = repetition_text+"repeat the same meta tags"
+	  $seoresult["meta"]["other_color"] = "red"
+	else
+	  $seoresult["meta"]["other"] = repetition_text+"change your meta description, well done"
+	  $seoresult["meta"]["other_color"] = "green"
+	end
+	
+	
+	
+      else
+	no_links_text= "You dont seem to have any internal links on the page you provided, so we cant check this for you"
+	$seoresult["title"]["other"] = no_links_text
+	$seoresult["meta"]["other"] = no_links_text
+      end
+      
       #$seoresult["repetition"] = $accepted_urls.include? "https://www.facebook.com"
       
       #architecture
@@ -218,9 +318,6 @@ module RecordsHelper
       $seoresult["url"] = analysis_one($seoresult["url"], x, $seoresult["keywords"], 115, true)
       
       #url canonicalization
-      
-      
-      
       $seoresult["url_canon"] = Hash.new
       if $accepted_urls.length > 1
 	$seoresult["url_canon"]["color"] = "red"
@@ -229,6 +326,7 @@ module RecordsHelper
 	$seoresult["url_canon"]["color"] = "green"
 	$seoresult["url_canon"]["content"] = "very well done! all URL's redirect to "+$accepted_urls[0]
       end
+      
       #speed
       $seoresult["speed"] = Hash.new
       $seoresult["speed"]["time"] = (finish - start).round(2)
@@ -247,7 +345,16 @@ module RecordsHelper
       
       #https
       $seoresult["security"] = Hash.new
-      if x[0..4] == "https"
+      http = false
+      $accepted_urls.each do |i|
+	if i[0..4] == "http:"
+	  http = true
+	end
+      end
+	  
+      
+      
+      if !http
         $seoresult["security"]["protocol"] = "HTTPS"
 	$seoresult["security"]["comment"] = "you are limiting connections to HTTPS, excellent"
 	$seoresult["security"]["color"] = "green"
@@ -273,6 +380,8 @@ module RecordsHelper
     
     $accepted_urls = Array.new
     
+    res_array = Array.new
+    
     url_variations.each do |i|
       begin
 	url_string = i+stripped_url
@@ -281,13 +390,27 @@ module RecordsHelper
 	req.use_ssl = (url.scheme == 'https')
 	path = url.path if url.path.present?
 	res = req.request_head(path || '/')
+	res_array << url.to_s
 	if res.code == "200"
 	  $accepted_urls << url_string
 	end
       rescue
       end
     end
-	
+    
+    #execute if all URL redirect or if the URL does not exist
+    if $accepted_urls.empty?
+      #if URL does not exits
+      if res_array.empty?
+	return res_array
+      end
+      #Find redirections
+      redirections = Array.new
+      res_array.each do |i|
+	redirections << fetch(i)
+      end
+      return redirections.uniq
+    end
     
     #ensuring url if formatted correctly and if not then we try to connect with http and if that fails we try https
     otpseo($accepted_urls[0])
