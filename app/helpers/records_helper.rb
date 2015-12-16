@@ -4,7 +4,24 @@ require 'open-uri'
 require 'net/http'
 
 module RecordsHelper
-    
+  def header_translate(x)
+    if x=="h1"
+      return "Main heading"
+    elsif x=="h2"
+      return "level 2 heading"
+    elsif x=="h3"
+      return "level 3 heading"
+    elsif x=="h4"
+      return "level 4 heading"
+    elsif x=="h5"
+      return "level 5 heading"
+    elsif x=="h6"
+      return "level 6 heading"
+    end
+  end
+  def contains(x,y)
+    !x[y].nil?
+  end
   def find_root(x)
     if !x[8..-1].index("/").nil?
     x[0..x[8..-1].index("/")+7]
@@ -66,20 +83,20 @@ module RecordsHelper
   
   def analysis_one(hash, text, keywords, length_limit=1000, urll=false)
     if text.empty?
-      hash["content"] = "missing!!!"
+      hash["content"] = "missing!"
       hash["content_color"] = "red"
     else
-      hash["content"] = text
+      hash["content"] = text.gsub("&amp;","&")
       hash["content_color"] = "black"
     
-    text.downcase!
-    client_keywords = text.split(/[, ;.&!?()\-\[\]]/).uniq.reject{|s| s.to_s == ''}
+    #text.downcase!
+    client_keywords = text.downcase.split(/[, ;.&!?()\-\[\]]/).uniq.reject{|s| s.to_s == ''}
 
     end
     hash["keyword_presence"] = Hash.new
     keywords.each do |i|
       if urll
-	hash["keyword_presence"][i] = text.include? i.downcase
+	hash["keyword_presence"][i] = text.downcase.include? i.downcase
       else
 	begin
 	hash["keyword_presence"][i] = client_keywords.include? i.downcase
@@ -104,16 +121,17 @@ module RecordsHelper
       hash["coverage"]["color"] = "black"
     end
 
-    hash["length"] = text.length
-    if hash["length"] == 0
+    
+    if text.length == 0
+      hash["length"] = "0 characters"
       hash["length_color"] = "red"
       #hash["length_comment"] = " - try keeping it under " + length_limit.to_s
-    elsif hash["length"] < length_limit
+    elsif text.length < length_limit
       hash["length_color"] = "green"
-      hash["length_comment"] = " - good length"
+      hash["length"] = text.length.to_s+" characters - good length"
     else
       hash["length_color"] = "amber"
-      hash["length_comment"] = " - try keeping it under " + length_limit.to_s
+      hash["length"] = text.length.to_s+" characters - try keeping it under " + length_limit.to_s
     end
     
     return hash
@@ -142,7 +160,7 @@ module RecordsHelper
       $seoresult["title"] = analysis_one($seoresult["title"], pagesource.css("title").inner_html, $seoresult["keywords"], 70)
       
       #meta
-      metalimit = 155
+      metalimit = 160
       $seoresult["meta"] = Hash.new
       begin
 	$seoresult["meta"] = analysis_one($seoresult["meta"], pagesource.css("meta[name=description]").attribute("content").to_s, $seoresult["keywords"], metalimit)
@@ -152,8 +170,55 @@ module RecordsHelper
       
       #headers
       $seoresult["headers"] = Hash.new
-      $seoresult["headers"] = analysis_one($seoresult["headers"], pagesource.css("h1").inner_html.to_s.gsub(/<[^>]*>/, ""), $seoresult["keywords"], 160)
+      all_headers = pagesource.css("h1, h2, h3, h4, h5, h6")
+      $seoresult["headers"]["data"] = all_headers
+      all_headers_text = ""
+      h1_count = 0
+      heading_string = ""
+      all_headers.each do |i|
+	heading_string = heading_string + i.to_s[1..2]
+	all_headers_text = all_headers_text + i.inner_html.to_s.gsub(/<[^>]*>/, "") + " "
+	if i.to_s[1..2] == "h1"
+	  h1_count = h1_count + 1
+	end
+      end
       
+      $seoresult["headers"] = analysis_one($seoresult["headers"], all_headers_text, $seoresult["keywords"])
+      
+      
+      #$seoresult["headers"]
+      
+      
+      #check header scipping
+      #if pagesource.css("h6").nil?
+      
+      
+      
+      #making sure there is no more than one h1
+      $seoresult["headers"]["organization"] = "Your headings seem well organized"
+      $seoresult["headers"]["organization_color"] = "green"
+      if h1_count > 1
+	$seoresult["headers"]["organization"] = "you seem to have more than one main heading (h1). We highly recommend you only use one describing the entire page"
+	$seoresult["headers"]["organization_color"] = "red"
+      elsif h1_count == 0
+	$seoresult["headers"]["organization"] = "you are missing a main heading (h1)"
+	$seoresult["headers"]["organization_color"] = "red"
+      elsif contains(heading_string,"h6") & !( contains(heading_string,"h5") & contains(heading_string,"h4") & contains(heading_string,"h3") & contains(heading_string,"h2") & contains(heading_string,"h1"))
+	$seoresult["headers"]["organization"] = "you have scipped to a level 6 heading (h6) prematurely"
+	$seoresult["headers"]["organization_color"] = "red"
+      elsif contains(heading_string,"h5") & !( contains(heading_string,"h4") & contains(heading_string,"h3") & contains(heading_string,"h2") & contains(heading_string,"h1"))
+	$seoresult["headers"]["organization"] = "you have scipped to a level 5 heading (h5) prematurely"
+	$seoresult["headers"]["organization_color"] = "red"
+      elsif contains(heading_string,"h4") & !( contains(heading_string,"h3") & contains(heading_string,"h2") & contains(heading_string,"h1"))
+	$seoresult["headers"]["organization"] = "you have scipped to a level 4 heading (h4) prematurely"
+	$seoresult["headers"]["organization_color"] = "red"
+      elsif contains(heading_string,"h3") & !( contains(heading_string,"h2") & contains(heading_string,"h1"))
+	$seoresult["headers"]["organization"] = "you have scipped to a level 3 heading (h3) prematurely"
+	$seoresult["headers"]["organization_color"] = "red"
+      elsif contains(heading_string,"h2") & !contains(heading_string,"h1")
+	$seoresult["headers"]["organization"] = "you have scipped to a level 2 heading (h2) prematurely"
+	$seoresult["headers"]["organization_color"] = "red"
+      end
       
       #structured data
       s_d_screen = Array.new
@@ -208,10 +273,10 @@ module RecordsHelper
       
       
       #stuffing
-      $seoresult["stuffing"] = Hash.new
-      $seoresult["keywords"].each do |i|
-	$seoresult["stuffing"][i] = count_em(pagesource.to_s.downcase, i.downcase)
-      end
+      #$seoresult["stuffing"] = Hash.new
+      #$seoresult["keywords"].each do |i|
+	#$seoresult["stuffing"][i] = count_em(pagesource.to_s.downcase, i.downcase)
+      #end
       
       
       #images
@@ -321,7 +386,7 @@ module RecordsHelper
       $seoresult["url_canon"] = Hash.new
       if $accepted_urls.length > 1
 	$seoresult["url_canon"]["color"] = "red"
-	$seoresult["url_canon"]["content"] = "Your site can be accessed using multiple URL's ("+$accepted_urls.join(", ")+"). Search engines will treat each domain as a seperate page (this is bad)! To solve the issue, redirect URL's accordingly using HTTP 301 responses (ask your web developer about this)"
+	$seoresult["url_canon"]["content"] = "Your site can be accessed using multiple URL's ("+$accepted_urls.join(", ")+"). Search engines will treat each domain as a separate page (this is bad)! To solve the issue, redirect URL's accordingly using HTTP 301 responses (ask your web developer about this)"
       else
 	$seoresult["url_canon"]["color"] = "green"
 	$seoresult["url_canon"]["content"] = "very well done! all URL's redirect to "+$accepted_urls[0]
@@ -360,7 +425,7 @@ module RecordsHelper
 	$seoresult["security"]["color"] = "green"
       else
 	$seoresult["security"]["protocol"] = "HTTP"
-        $seoresult["security"]["comment"] = "you are currently allowing HTTP access, limiting access to HTTPS (a more secure version of the HTTP protocol) will help imporve your serch engine ranking"
+        $seoresult["security"]["comment"] = "you are currently allowing HTTP access, limiting access to HTTPS (a more secure version of the HTTP protocol) will help improve your search engine ranking"
 	$seoresult["security"]["color"] = "amber"
       end
       

@@ -4,7 +4,7 @@
 
 
 <%  seoanal = seo_anal(@record.url, @record.keywords) %>
-
+<% redirection = false %>
 
 
 <% if seoanal.empty? %>
@@ -14,13 +14,11 @@
   
   
   <% if seoanal.kind_of?(Array) %>
-    <h1 class="red">The URL you provided redirects to a completely different URL, namely <%= seoanal[0] %> - This is a SEO disaster and the first thing you should do is create a direct link!</h1>
+    <% redirection = true %>
     <% seoanal = seo_anal(seoanal[0], @record.keywords) %>
-  <% else %>
-    <h1>We have analyzed <span id="url"><%= @record.url %></span> based on a search for "<span id="keywords"><%= @record.keywords %></span>"</h1>
   <% end %>
 
-
+<h1>We have analyzed <span id="url"><%= @record.url %></span> based on a search for "<span id="keywords"><%= @record.keywords %></span>"</h1>
 
   
 
@@ -29,23 +27,47 @@
   <h3>Title</h3>
   <span class="section">Title:</span> <%= render 'colorize', text: seoanal["title"]["content"], color: seoanal["title"]["content_color"] %> <br>
   <span class="section">Keyword coverage:</span> <%= render 'colorize', text: (seoanal["title"]["coverage"]["value"].to_s+"%"), color: seoanal["title"]["coverage"]["color"] %> <br>
-  <span class="section">Length of your title:</span> <%= render 'colorize', text: (seoanal["title"]["length"].to_s+" characters"), color: seoanal["title"]["length_color"] %> <%= seoanal["title"]["length_comment"] %><br>
+  <span class="section">Length of your title:</span> <%= render 'colorize', text: seoanal["title"]["length"], color: seoanal["title"]["length_color"] %><br>
   <span class="section">Uniqueness of your title:</span> <%= render 'colorize', text: seoanal["title"]["other"], color: seoanal["title"]["other_color"] %>
 
   <h3>Meta Description</h3>
   <span class="section">Meta description:</span> <%= render 'colorize', text: seoanal["meta"]["content"], color: seoanal["meta"]["content_color"] %><br>
-  <span class="section">Keyword coverage:</span> <%= render 'colorize', text: seoanal["meta"]["coverage"]["value"].to_s+"%", color: seoanal["meta"]["coverage"]["color"]%>  <br>
-  <span class="section">Length of your meta description:</span> <%= render 'colorize', text: (seoanal["meta"]["length"].to_s+" characters"), color: seoanal["meta"]["length_color"]%> <%= seoanal["meta"]["length_comment"] %><br>
+  <span class="section">Keyword coverage:</span> <%= render 'colorize', text: seoanal["meta"]["coverage"]["value"].to_s+"%", color: seoanal["meta"]["coverage"]["color"]%><br>
+  <span class="section">Length of your meta description:</span> <%= render 'colorize', text: seoanal["meta"]["length"], color: seoanal["meta"]["length_color"]%><br>
   <span class="section">Uniqueness of meta description:</span> <%= render 'colorize', text: seoanal["meta"]["other"], color: seoanal["meta"]["other_color"] %>
   
-  <h3>Main header (h1)</h3>
-  <span class="section">Main heading:</span> <%= render 'colorize', text: seoanal["headers"]["content"], color: seoanal["headers"]["content_color"] %><br>
-  <span class="section">Keyword coverage:</span> <%= render 'colorize', text: seoanal["headers"]["coverage"]["value"].to_s+"%", color: seoanal["headers"]["coverage"]["color"]%> <br>
-  <span class="section">Length of your heading:</span> <%= render 'colorize', text: (seoanal["headers"]["length"].to_s+" characters"), color: seoanal["headers"]["length_color"] %> <%= seoanal["headers"]["length_comment"] %>
+  <h3>Headings</h3>
+  <!--<span class="section">Main heading:</span> <%= render 'colorize', text: seoanal["headers"]["h1"], color: seoanal["headers"]["h1_color"] %><br> -->
+  <% if seoanal["headers"]["data"].empty? %>
+    <span class="section">No headings found on your page</span><br>
+  <% else %>
+    <table>
+    <tr>
+	<td><span class="table_head">Heading Importance</span></td>
+	<td><span class="table_head">HTML element</span></td>
+	<td><span class="table_head">Value</span></td>
+      </tr>
+    <% seoanal["headers"]["data"].each do |i| %>
+      <% html_e = i.to_s[1..2] %>
+      <tr>
+	<td> <%= header_translate(html_e) %> </td>
+	<td> <%= html_e %> </td>
+	<td> <%= i.inner_html.to_s.gsub(/<[^>]*>/, "").gsub("&amp;","&") %> </td>
+      </tr>
+    <% end %>
+    </table><br>
+  <% end %>
+  
+  <span class="section">Keyword coverage within headings:</span> <%= render 'colorize', text: seoanal["headers"]["coverage"]["value"].to_s+"%", color: seoanal["headers"]["coverage"]["color"]%> <br>
+  <span class="section">Organization of headings:</span> <%= render 'colorize', text: seoanal["headers"]["organization"], color: seoanal["headers"]["organization_color"] %>
+
+
+
+  <!-- <%= seoanal["headers"] %> -->
 
 
   <h3>Structured data</h3>
-  <p>Structured data helps search engines put your information into context. Currently there are four main formats: JSON-LD, Microdata, RDFa and Microformats. And yes, we check for all of them. Also please be advised that we only check for structured data on the page you prodived. It could be that the page you provided us does not have structured data but other pages on you site do. If you think this might be the case, simply use our service to test multiple pages on your site</p>
+  <p>Structured data helps search engines put your information into context. Currently there are four main formats: JSON-LD, Microdata, RDFa and Microformats. And yes, we check for all of them. Also please be advised that we only check for structured data on the page you provided. It could be that the page you provided us does not have structured data but other pages on you site do. If you think this might be the case, simply use our service to test multiple pages on your site</p>
   <span class="section">Structured data screening:</span> <%= render 'colorize', text: seoanal["structure"]["content"], color: seoanal["structure"]["color"] %><br>
 
 
@@ -53,7 +75,7 @@
   <%= seoanal["stuffing"] %>-->
 
   <h3>Images</h3>
-  Images are not necessary for a good ranking, however in case you do have images, it is important to give them descriptive file names and well as "alt" attribute. "atl" attributes are used in 
+  Images are not necessary for a good ranking, however in case you do have images, it is important to give them appropriate file names and descriptions (via HTML "alt" attributes). <br>
 
   <table>
   <tr>
@@ -76,20 +98,14 @@
   <h3>URL</h3>
   <span class="section">Your URL:</span> <%= seoanal["url"]["content"] %> <br>
   <span class="section">Keyword coverage:</span> <%= render 'colorize', text: seoanal["url"]["coverage"]["value"], color: seoanal["url"]["coverage"]["color"] %> <br>
-
-
-  <span class="section">Length of your URL:</span> <%= render 'colorize', text: seoanal["url"]["length"].to_s+" characters - "+seoanal["url"]["length_comment"], color: seoanal["url"]["length_color"] %>
-
-
-
-
-
-
-
-
-
-  <h3>URL Canonicalization</h3>
-  <%= render 'colorize', text: seoanal["url_canon"]["content"], color: seoanal["url_canon"]["color"] %>
+  <span class="section">Length of your URL:</span> <%= render 'colorize', text: seoanal["url"]["length"], color: seoanal["url"]["length_color"] %><br>
+  <span class="section">Domain name preservation:</span> 
+  <% if redirection %>
+    <span class="red">The domain you are trying to optimize (<%= @record.url %>) redirects to a completely different one, namely <%= seoanal["url"]["content"] %> - This is a SEO disaster and the first thing you should do is create a direct link by choosing the right name server and setting up your zone file properly!</span><br>
+  <% else %>
+    <span class="green">The domain you are trying to optimize does not redirect elsewhere, well done.</span><br>
+  <% end %>
+  <span class="section">URL Canonicalization: </span> <%= render 'colorize', text: seoanal["url_canon"]["content"], color: seoanal["url_canon"]["color"] %>
 
   <h3>Speed</h3>
   <span class="section">Page load time:</span> <%= render 'colorize', text: (seoanal["speed"]["time"].to_s+" seconds"), color: seoanal["speed"]["color"] %> - <%= seoanal["speed"]["comment"] %>
@@ -99,15 +115,16 @@
 
 
   <h2 id="report">Important things we can't check for you</h2>
-  Securing links to your page from other established sited such as well know online magazines as well as optaining a good reputation in social media is extremely improtant in SEO. For more information study the <%= link_to "Periodic table of SEO", "http://searchengineland.com/download/seotable/SearchEngineLand-Periodic-Table-of-SEO-2015.pdf" %>.
+  Securing links to your page from other established sites such as well know online magazines as well as obtaining a good reputation in social media is extremely important in SEO. For more information study the <%= link_to "Periodic table of SEO", "http://searchengineland.com/download/seotable/SearchEngineLand-Periodic-Table-of-SEO-2015.pdf" %>.
 
-  <h2 id="report">Check how you currently rank with mayor searche engines</h2>
-  After improving your SEO score you should see your search engine ranking go up after a few days (search engine programs take a while until they revisit and reevaluate your site). Click <%= link_to "here", "https://serps.com/tools/rank_checker"%> to see exactly where you stand with Google and Yahoo in regard to your choice of keywords.
+  <h2 id="report">Check how you currently rank with mayor search engines</h2>
+  After improving your SEO score you should see your search engine ranking go up after a few days (search engine programs take a while until they revisit and reevaluate your site). Check out <%= link_to "SERPs Rank Checker", "https://serps.com/tools/rank_checker"%> to see exactly where you stand with Google and Yahoo in regard to your choice of keywords.
   <br>
 
 
 <% end %>
-<%= link_to "Change my search", root_path, class:"btn btn-primary btn-md changesearch"%><br>
+
+<button onclick="goBack()" class="btn btn-primary btn-md changesearch">Change my search</button><br>
 
 
 

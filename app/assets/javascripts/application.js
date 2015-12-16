@@ -19,3 +19,8 @@ function myFunction() {
     var x = document.getElementById("myBtn");
     x.disabled = true;
 }
+
+
+function goBack() {
+    window.history.back();
+}
