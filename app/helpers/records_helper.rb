@@ -4,6 +4,19 @@ require 'open-uri'
 require 'net/http'
 
 module RecordsHelper
+  def sd_insert(type, element)
+    sd_unit = Hash.new
+    
+    sd_unit["property"] = element.attribute(type)
+    
+    if element.attribute("content").nil?
+      sd_unit["value"] = element.inner_html
+    else
+      sd_unit["value"] = element.attribute("content")
+    end
+    return sd_unit
+  end
+  
   def header_translate(x)
     if x=="h1"
       return "Main heading"
@@ -61,6 +74,7 @@ module RecordsHelper
       x.each do |i|
 	multiple_words = multiple_words + i + ", "
       end
+      return multiple_words[0..-3]
     end
   end
   
@@ -221,17 +235,40 @@ module RecordsHelper
       end
       
       #structured data
+      $seoresult["structure"]=Hash.new
+      $seoresult["structure"]["vocab"] = Array.new
+      $seoresult["structure"]["vocab_color"] = "green"
+      
+      
       s_d_screen = Array.new
+      sd_formats = Hash.new
+      sd_formats["md"] = Array.new
+      sd_formats["rdfa"] = Array.new
+      sd_formats["mf"] = Array.new
+      sd_formats["jld"] = Array.new
       
       if !pagesource.css("script[type='application/ld+json']").empty?
 	s_d_screen << "JSON-LD"
+	json_ld_array = pagesource.css("script[type='application/ld+json']").to_s.sub("<script type=\"application/ld+json\">","").sub("</script>","").gsub("\\u0040","@").gsub("\"","").gsub("{","").gsub("}","").split(",")
+	#sd_formats["jld"] = Hash.new
+	json_ld_array.each do |i|
+	  property_value_pair = Hash.new
+	  property_value_pair["property"] = i.split(":")[0]
+	  property_value_pair["value"] = i.split(":")[1..-1].join
+	  
+	  sd_formats["jld"] << property_value_pair
+	
+	end
+	
       end
+      
+      
+      
       
       htmlelements =pagesource.to_s.gsub(/>[^>]*</, "><").gsub(/\="[^"]*"/,"").gsub(/<!--[^>]*-->/, "").gsub(/<\![^>]>/,"").gsub(/<\![^>]*>/,"").scan(/<[^ >]*/).map { |i| i.gsub("</","").gsub("<","") }
       htmlelements.uniq!
       
-      #htmlelements.each do |i|
-	#if pagesource.css
+ 
       atr = Array.new
       htmlelements.each do |elements|
 	begin
@@ -242,33 +279,88 @@ module RecordsHelper
 	  if !singleelement.attribute("class").nil?
 	    if microformats_checker(singleelement.attribute("class").to_s)
 	      s_d_screen << "microformats"
+	      sd_formats["mf"] << singleelement
 	    end
 	  end
-	  #checking for RDFa support
-	  if !singleelement.attribute("property").nil? || !singleelement.attribute("resource").nil? || !singleelement.attribute("prefix").nil? || !singleelement.attribute("typeof").nil? || !singleelement.attribute("vocab").nil?
-	    s_d_screen << "RDFa"
-	  end
 	  
-	  #checking for Microdata support
-	  if !singleelement.attribute("itemscope").nil? || !singleelement.attribute("itemtype").nil? || !singleelement.attribute("itemid").nil? || !singleelement.attribute("itemprop").nil? || !singleelement.attribute("itemref").nil?
+	  
+	  
+	  #checking for RDFa support and filling in the sd_formats array
+	  if !singleelement.attribute("property").nil?
+	    s_d_screen << "RDFa"	    
+	    sd_entry = sd_insert("property", singleelement)
+	    sd_formats["rdfa"] << sd_entry
+	    if sd_entry["property"].to_s.include? ":"
+	      $seoresult["structure"]["vocab"] << sd_entry["property"].to_s.split(":")[0]
+	    end
+	  end
+	  if !singleelement.attribute("resource").nil? 
+	    s_d_screen << "RDFa"
+	    #sd_formats["rdfa"] << sd_insert("resource", singleelement)
+	  end
+	  if !singleelement.attribute("prefix").nil?
+	    s_d_screen << "RDFa"
+	    $seoresult["structure"]["vocab"] << singleelement.attribute("prefix").to_s
+	    #sd_formats["rdfa"] << sd_insert("prefix", singleelement)
+	  end
+	  if !singleelement.attribute("typeof").nil? 
+	    s_d_screen << "RDFa"
+	    #sd_formats["rdfa"] << sd_insert("typeof", singleelement)
+	  end
+	  if !singleelement.attribute("vocab").nil?
+	    s_d_screen << "RDFa"
+	    $seoresult["structure"]["vocab"] << singleelement.attribute("vocab").to_s
+	    #sd_formats["rdfa"] << sd_insert("vocab", singleelement)
+	  end	  
+	  
+	  
+	  #checking for Microdata support and filling in the sd_formats array
+	  if !singleelement.attribute("itemscope").nil? 
 	    s_d_screen << "Microdata"
+	    #sd_formats["md"] << sd_insert("itemscope", singleelement)
+	  end
+	  if !singleelement.attribute("itemtype").nil? 
+	    s_d_screen << "Microdata"
+	    $seoresult["structure"]["vocab"] << singleelement.attribute("itemtype").to_s
+	    #sd_formats["md"] << sd_insert("itemtype", singleelement)
+	  end
+	  if !singleelement.attribute("itemid").nil? 
+	    s_d_screen << "Microdata"
+	    #sd_formats["md"] << sd_insert("itemid", singleelement)
+	  end
+	  if !singleelement.attribute("itemprop").nil?
+	    s_d_screen << "Microdata"
+	    sd_formats["md"] << sd_insert("itemprop", singleelement)
+	  end
+	  if !singleelement.attribute("itemref").nil?
+	    s_d_screen << "Microdata"
+	    #sd_formats["md"] << sd_insert("itemref", singleelement)
 	  end
 	end
 	rescue
 	end
       end
+      $seoresult["structure"]["vocab"].uniq!
+      if $seoresult["structure"]["vocab"].empty?
+	$seoresult["structure"]["vocab_color"] = "amber"
+      end
       s_d_screen.uniq!
-      $seoresult["structure"]=Hash.new
       
-      
+      $seoresult["structure"]["data"] = sd_formats
       $seoresult["structure"]["content"] = ""
       if s_d_screen.empty?
-	$seoresult["structure"]["content"] = "You do not seem to support any form of structured data"
+	$seoresult["structure"]["content"] = "You do not seem to include any form of structured data"
 	$seoresult["structure"]["color"] = "red"
       else
-	$seoresult["structure"]["content"] = "Great Job, you seem to be using " + sentence_style(s_d_screen)
+	$seoresult["structure"]["content"] = sentence_style(s_d_screen)
 	$seoresult["structure"]["color"] = "green"
       end
+      
+      
+      
+      
+      
+      
       
       
       
@@ -313,7 +405,7 @@ module RecordsHelper
 	  end
 	  
 	  link_ending=url_extention(link)
-	  if !link_ending["contact"].nil? || !link_ending["about"].nil? || !link_ending["career"].nil? || !link_ending["privacy"].nil? || !link_ending["jobs"].nil? || !link_ending["login"].nil? || !link_ending["shop"].nil? || !link_ending["terms"].nil? || !link_ending["conditions"].nil? || !link_ending["policy"].nil? || !link_ending["community"].nil? || !link_ending["pricing"].nil? || !link_ending["help"].nil? || !link_ending["faq"].nil? || !link_ending["press"].nil? || !link_ending["blog"].nil? || !link_ending["feedback"].nil? || !link_ending["news"].nil?
+	  if !link_ending["contact"].nil? || !link_ending["about"].nil? || !link_ending["career"].nil? || !link_ending["privacy"].nil? || !link_ending["jobs"].nil? || !link_ending["shop"].nil? || !link_ending["terms"].nil? || !link_ending["conditions"].nil? || !link_ending["policy"].nil? || !link_ending["community"].nil? || !link_ending["pricing"].nil? || !link_ending["help"].nil? || !link_ending["faq"].nil? || !link_ending["press"].nil? || !link_ending["blog"].nil? || !link_ending["feedback"].nil? || !link_ending["news"].nil?
 	    super_list << link
 	  end
 	  

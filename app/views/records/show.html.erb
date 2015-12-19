@@ -18,21 +18,30 @@
     <% seoanal = seo_anal(seoanal[0], @record.keywords) %>
   <% end %>
 
-<h1>We have analyzed <span id="url"><%= @record.url %></span> based on a search for "<span id="keywords"><%= @record.keywords %></span>"</h1>
+<h1>We have analyzed <span id="url"><%= @record.url %></span>
 
+<% if @record.keywords.empty? %>
+  </h1>
+<% else %>
+  based on a search for "<span id="keywords"><%= @record.keywords %></span>"</h1>
+<% end %>
   
 
 
   <h2 id="report">HTML Analysis</h2>
   <h3>Title</h3>
   <span class="section">Title:</span> <%= render 'colorize', text: seoanal["title"]["content"], color: seoanal["title"]["content_color"] %> <br>
-  <span class="section">Keyword coverage:</span> <%= render 'colorize', text: (seoanal["title"]["coverage"]["value"].to_s+"%"), color: seoanal["title"]["coverage"]["color"] %> <br>
+  <% if !@record.keywords.empty? %>
+    <span class="section">Keyword coverage:</span> <%= render 'colorize', text: (seoanal["title"]["coverage"]["value"].to_s+"%"), color: seoanal["title"]["coverage"]["color"] %> <br>
+  <% end %>
   <span class="section">Length of your title:</span> <%= render 'colorize', text: seoanal["title"]["length"], color: seoanal["title"]["length_color"] %><br>
   <span class="section">Uniqueness of your title:</span> <%= render 'colorize', text: seoanal["title"]["other"], color: seoanal["title"]["other_color"] %>
 
   <h3>Meta Description</h3>
   <span class="section">Meta description:</span> <%= render 'colorize', text: seoanal["meta"]["content"], color: seoanal["meta"]["content_color"] %><br>
-  <span class="section">Keyword coverage:</span> <%= render 'colorize', text: seoanal["meta"]["coverage"]["value"].to_s+"%", color: seoanal["meta"]["coverage"]["color"]%><br>
+  <% if !@record.keywords.empty? %>
+    <span class="section">Keyword coverage:</span> <%= render 'colorize', text: seoanal["meta"]["coverage"]["value"].to_s+"%", color: seoanal["meta"]["coverage"]["color"]%><br>
+  <% end %>
   <span class="section">Length of your meta description:</span> <%= render 'colorize', text: seoanal["meta"]["length"], color: seoanal["meta"]["length_color"]%><br>
   <span class="section">Uniqueness of meta description:</span> <%= render 'colorize', text: seoanal["meta"]["other"], color: seoanal["meta"]["other_color"] %>
   
@@ -43,7 +52,7 @@
   <% else %>
     <table>
     <tr>
-	<td><span class="table_head">Heading Importance</span></td>
+	<td><span class="table_head">Type of heading</span></td>
 	<td><span class="table_head">HTML element</span></td>
 	<td><span class="table_head">Value</span></td>
       </tr>
@@ -57,22 +66,57 @@
     <% end %>
     </table><br>
   <% end %>
-  
-  <span class="section">Keyword coverage within headings:</span> <%= render 'colorize', text: seoanal["headers"]["coverage"]["value"].to_s+"%", color: seoanal["headers"]["coverage"]["color"]%> <br>
+  <% if !@record.keywords.empty? %>
+    <span class="section">Keyword coverage within headings:</span> <%= render 'colorize', text: seoanal["headers"]["coverage"]["value"].to_s+"%", color: seoanal["headers"]["coverage"]["color"]%> <br>
+  <% end %>
   <span class="section">Organization of headings:</span> <%= render 'colorize', text: seoanal["headers"]["organization"], color: seoanal["headers"]["organization_color"] %>
 
 
 
-  <!-- <%= seoanal["headers"] %> -->
+  <!--Structured Data-->
 
 
   <h3>Structured data</h3>
-  <p>Structured data helps search engines put your information into context. Currently there are four main formats: JSON-LD, Microdata, RDFa and Microformats. And yes, we check for all of them. Also please be advised that we only check for structured data on the page you provided. It could be that the page you provided us does not have structured data but other pages on you site do. If you think this might be the case, simply use our service to test multiple pages on your site</p>
-  <span class="section">Structured data screening:</span> <%= render 'colorize', text: seoanal["structure"]["content"], color: seoanal["structure"]["color"] %><br>
+  <p>Structured data helps search engines put your information into context. Currently there are four main formats: <%= link_to "JSON-LD", "http://www.w3.org/TR/json-ld/"%>, <%= link_to "Microdata", "http://www.w3.org/TR/microdata/Microdata"%>, <%= link_to "RDFa", "http://www.w3.org/TR/xhtml-rdfa-primer/RDFa"%> and <%= link_to "Microformats", "http://microformats.org/"%>. And yes, we check for all of them. Also please be advised that we only check for structured data on the page you provided. It could be that the page you provided us does not have structured data but other pages on you site do. If you think this might be the case, simply use our service to test multiple pages on your site</p>
+  <span class="section">Structured data formats:</span> <%= render 'colorize', text: seoanal["structure"]["content"], color: seoanal["structure"]["color"] %><br>
+  <span class="section">Structured data vocabularies:</span> <%= render 'colorize', text: sentence_style(seoanal["structure"]["vocab"]), color: seoanal["structure"]["vocab_color"] %><br>
+  
+  
+  <table>
+    <tr>
+	<td><span class="table_head">Format</span></td>
+	<td><span class="table_head">Property</span></td>
+	<td><span class="table_head">Value</span></td>
+      </tr>
+    <% seoanal["structure"]["data"]["rdfa"].each do |i| %>
+      <tr>
+	<td>RDFa</td>
+	<td> <%= i["property"] %> </td>
+	<td> <%= i["value"] %> </td>
+      </tr>
+    <% end %>
+    <% seoanal["structure"]["data"]["md"].each do |i| %>
+      <tr>
+	<td>Microdata</td>	
+	<td> <%= i["property"] %> </td>
+	<td> <%= i["value"] %> </td>
+      </tr>
+    <% end %>
+    <% seoanal["structure"]["data"]["jld"].each do |i| %>
+      <tr>
+	<td>JSON-LD</td>	
+	<td> <%= i["property"] %> </td>
+	<td> <%= i["value"] %> </td>
+      </tr>
+    <% end %>
+    </table><br>
+  
+  
+  
 
 
-  <!--<h3>Stuffing</h3>
-  <%= seoanal["stuffing"] %>-->
+
+  <!--Images-->
 
   <h3>Images</h3>
   Images are not necessary for a good ranking, however in case you do have images, it is important to give them appropriate file names and descriptions (via HTML "alt" attributes). <br>
@@ -97,7 +141,9 @@
   <h2 id="report">Architecture Analysis</h2>
   <h3>URL</h3>
   <span class="section">Your URL:</span> <%= seoanal["url"]["content"] %> <br>
-  <span class="section">Keyword coverage:</span> <%= render 'colorize', text: seoanal["url"]["coverage"]["value"], color: seoanal["url"]["coverage"]["color"] %> <br>
+  <% if !@record.keywords.empty? %>
+    <span class="section">Keyword coverage:</span> <%= render 'colorize', text: seoanal["url"]["coverage"]["value"], color: seoanal["url"]["coverage"]["color"] %> <br>
+  <% end %>
   <span class="section">Length of your URL:</span> <%= render 'colorize', text: seoanal["url"]["length"], color: seoanal["url"]["length_color"] %><br>
   <span class="section">Domain name preservation:</span> 
   <% if redirection %>
