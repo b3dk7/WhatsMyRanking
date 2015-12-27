@@ -1,0 +1,116 @@
+require 'uri'
+require 'nokogiri'
+require 'open-uri'
+
+keywords = ARGV[0]
+$url = ARGV[1]
+keywords = keywords.gsub(","," ").squeeze(" ").gsub(" ","+")
+
+# on the page seo
+def otpseo(x)
+
+  pagesource = Nokogiri::HTML(open(x))
+    
+  
+
+  puts "url: " + x
+  puts "title: " + pagesource.css("title").to_s.sub("</title>","")
+  puts "meta description: " + meta(pagesource.css("meta").to_s)
+  puts "<h1>: " + pagesource.css("h1").to_s.sub("</h1>","")
+
+  
+end
+
+
+
+
+def meta(x)
+  tags_h_t = x
+  
+  startindex = tags_h_t.index('<meta name="description" content=')
+  
+  if !startindex.nil?
+    tags_t = tags_h_t[startindex..-1]
+    endindex = tags_t.index('>')
+    tags = tags_t[0..endindex-2]
+    return tags.sub('<meta name="description" content="','')
+  end
+  return ""
+end
+
+
+
+
+
+def compare(selink)
+
+    selink[$url.downcase.sub("www.","").sub("http://","").sub("https://","")]
+
+end
+
+counter = 0
+rank = 0
+found = false
+
+for i in 0..31
+
+  if found
+    break
+  end
+  
+  #doc = Nokogiri::HTML(open("https://www.google.com/search?q="+keywords+"&start="+i.to_s+"0"))
+  doc = Nokogiri::HTML(open("https://www.google.com/search?q="+keywords+"&start="+i.to_s+"0"))
+  
+  listing = doc.css("li.g")
+  urls = listing.css("h3.r")
+
+  
+
+
+  for i in 0..urls.length-1
+    withtail = urls[i].to_s.sub('<h3 class="r"><a href="/url?q=','')
+    link = URI::decode(withtail[0..withtail.index('&amp')-1])
+    setitle = urls[i].css("a").to_s
+    setitle = setitle[setitle.index('">')+2..-1].gsub("&amp;","").sub("</a>","").gsub("<b>","").gsub("</b>","")
+    if (link =~ URI::regexp) == 0
+      counter = counter+1
+      
+      #if counter < 11
+        #otpseo(link)
+      #else
+      puts link
+      #end
+      #puts setitle
+      if compare(link)# || compare(setitle)
+        found = true
+        rank = counter
+        $url = link
+        break
+      end
+    end
+  end
+  
+  if !doc.css("p#ofr").empty?
+    
+    break
+    
+  end
+
+  #puts "were on"+ counter.to_s
+
+end
+
+
+if rank > 0
+  puts $url + " is ranked number " + rank.to_s
+  otpseo($url)
+else
+  puts "sorry we could not find you"
+end
+
+
+#if $url["http://"]
+  
+#else
+  #otpseo("http://"+$url)
+#end

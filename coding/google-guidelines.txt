@@ -1,0 +1,10 @@
+
+over 200 google criteras
+
+* how often does the keyword appear on your page
+* does the keyword appear in your title
+* does the keyword appear in the url
+* directly adjacent?
+* does the page include synonyms of those words?
+* is this page from a quality website or not?
+* how many outside link point to it and how important those links are

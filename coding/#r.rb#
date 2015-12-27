@@ -1,0 +1,4 @@
+def slash_position(x)
+      x[8..-1].index("/")+7
+    
+  end

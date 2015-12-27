@@ -5,8 +5,7 @@ require 'open-uri'
 keywords = ARGV[0]
 $url = ARGV[1]
 keywords = keywords.gsub(","," ").squeeze(" ").gsub(" ","+")
-doc = Nokogiri::HTML(open("https://www.google.co.za/search?q="+keywords+"&start=00"))
-urls = doc.css("h3.r")
+
 
 def meta(x)
   begin
@@ -14,7 +13,7 @@ def meta(x)
     
     tags_h_t = elite.css("meta").to_s
     
-    startindex = tags_h_t.index('<meta name="keywords" content=')
+    startindex = tags_h_t.index('<meta name="description" content=')
     
     if !startindex.nil?
       tags_t = tags_h_t[startindex..-1]
@@ -41,12 +40,19 @@ def steralize(x)
 end
 
 def compare(selink)
-  if selink[$url]
-    return true
-  else
-    return false
+  begin
+    if selink.downcase[$url.downcase]
+      return true
+    else
+      return false
+    end
+  rescue
+    if selink[$url]
+      return true
+    else
+      return false
+    end
   end
-  
   #selink = steralize(selink)
   #userlink = steralize($url)
   #if userlink['/']
@@ -61,21 +67,62 @@ def compare(selink)
   #return  selink == userlink
 end
 
-ranking = 0
-for i in 0..urls.length-1
-  withtail = urls[i].to_s.gsub('<h3 class="r"><a href="/url?q=','')
-  link = withtail[0..withtail.index('&amp')-1]
-  
-  if (link =~ URI::regexp) == 0
-    ranking = ranking+1
-    puts link
-    if compare(link)
-      break
-    end
-    #puts meta(link)
-    puts "\n\n"
+counter = 0
+rank = 0
+found = false
+
+for i in 0..30
+
+  if found
+    break
   end
   
+  doc = Nokogiri::HTML(open("https://www.google.com/search?q="+keywords+"&start="+i.to_s+"0"))
+  listing = doc.css("li.g")
+  urls = listing.css("h3.r")
+
+  
+
+
+  for i in 0..urls.length-1
+    withtail = urls[i].to_s.gsub('<h3 class="r"><a href="/url?q=','')
+    link = URI::decode(withtail[0..withtail.index('&amp')-1])
+    setitle = urls[i].css("a").to_s
+    setitle = setitle[setitle.index('">')+2..-1].gsub("&amp;","").sub("</a>","").gsub("<b>","").gsub("</b>","")
+    if (link =~ URI::regexp) == 0
+      counter = counter+1
+      puts link
+      if counter < 11
+        puts "title: "
+        puts "meta keywords: "
+        puts "meta description: "
+        puts "<h1>: "
+        puts "alt: "
+      end
+      #puts setitle
+      if compare(link)# || compare(setitle)
+        found = true
+        rank = counter
+        break
+      end
+      #puts meta(link)
+      #puts "\n\n"
+    end
+  end
+  
+  if !doc.css("p#ofr").empty?
+    
+    break
+    
+  end
+  puts "were on"+ counter.to_s
+
 end
 
-puts ranking
+
+if rank > 0
+  puts "you are ranked number " + rank.to_s
+else
+  puts "sorry you currently are not ranked on this search engine"
+end
+

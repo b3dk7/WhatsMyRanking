@@ -1,0 +1,15 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  url: MyString
+  keywords: MyText
+  searchengine: MyString
+  ranking: 1
+  user_id: 
+
+two:
+  url: MyString
+  keywords: MyText
+  searchengine: MyString
+  ranking: 1
+  user_id: 
