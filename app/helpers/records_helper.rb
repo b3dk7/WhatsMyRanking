@@ -257,6 +257,9 @@ module RecordsHelper
 	  property_value_pair["value"] = i.split(":")[1..-1].join
 	  
 	  sd_formats["jld"] << property_value_pair
+	  if property_value_pair["property"] == "@context"
+	    $seoresult["structure"]["vocab"] << property_value_pair["value"]
+	  end
 	
 	end
 	
