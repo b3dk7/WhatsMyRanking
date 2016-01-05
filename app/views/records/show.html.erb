@@ -1,5 +1,6 @@
 
-
+<% @title="SEO report on "+@record.url+" | whatsmyranking.com"%>
+<% @description="SEO report on "+@record.url%>
 
 
 
@@ -77,7 +78,7 @@
 
 
   <h3>Structured data</h3>
-  <p>Structured data helps search engines put your information into context. Currently there are four main formats: <%= link_to "JSON-LD", "http://www.w3.org/TR/json-ld/"%>, <%= link_to "Microdata", "http://www.w3.org/TR/microdata/Microdata"%>, <%= link_to "RDFa", "http://www.w3.org/TR/xhtml-rdfa-primer/RDFa"%> and <%= link_to "Microformats", "http://microformats.org/"%>. And yes, we check for all of them. Also please be advised that we only check for structured data on the page you provided. It could be that the page you provided us does not have structured data but other pages on you site do. If you think this might be the case, simply use our service to test multiple pages on your site</p>
+  <p>Structured data helps search engines put your information into context. Currently there are four main formats: <%= link_to "JSON-LD", "http://www.w3.org/TR/json-ld/"%>, <%= link_to "Microdata", "http://www.w3.org/TR/microdata/Microdata"%>, <%= link_to "RDFa", "http://www.w3.org/TR/xhtml-rdfa-primer/RDFa"%> and <%= link_to "Microformats", "http://microformats.org/"%>. And yes, we check for all of them. We also currently display Microdata, RDFa and JSON-LD (Microformats comming soon)</p>
   <span class="section">Structured data formats:</span> <%= render 'colorize', text: seoanal["structure"]["content"], color: seoanal["structure"]["color"] %><br>
   <span class="section">Structured data vocabularies:</span> <%= render 'colorize', text: sentence_style(seoanal["structure"]["vocab"]), color: seoanal["structure"]["vocab_color"] %><br>
   

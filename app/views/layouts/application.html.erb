@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Free Search Engine Optimization ( SEO ) and Google ranking | whatsmyranking.com</title>
+    <title><%= @title %></title>
     <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
     <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
     <%= csrf_meta_tags %>
-    <meta name="description" content="whatsmyranking.com provides web site owners with free tips on how to improve their search eingine ranking ( also knows as Search Engine Optimization or SEO ). Currently we only povide preformance results for Google, but we will include other search engines such as Bing, Yahoo in the near future">
+    <meta name="description" content="<%= @description %>">
     <%= favicon_link_tag '/wmr.ico' %>
     
     <!-- Piwik -->
