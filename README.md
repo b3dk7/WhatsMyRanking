@@ -10,13 +10,15 @@ Ruby 2.2 or above
 sqlite3 3.7 or above
 
 #instalation
+```
 bundle install
 rake db:create
 rake db:migrate
 rake assets:precompile
-
+```
 #run
+```
 rails s
-
+```
 #Deployment example
 [whatsmyranking.com](http://whatsmyranking.com)
