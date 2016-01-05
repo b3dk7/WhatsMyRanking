@@ -27,15 +27,15 @@
     
     
   </head>
-  <body>
+  <body vocab="http://purl.org/dc/terms/">
     <div class="container">
 
 
       <header>
 	<nav>
-	  <%= link_to "WhatsMyRanking", root_path, id:"logo"%>
+	  <span property="title"><%= link_to "WhatsMyRanking", root_path, id:"logo"%></span>
 	  <a class="navi" href="mailto:info@whatsmyranking.com">Contact</a>
-	  <a class="navi" href="https://github.com/b3dk7/WhatsMyRanking">Source Code</a>
+	  <span property="source"><a class="navi" href="https://github.com/b3dk7/WhatsMyRanking">Source Code</a></span>
 	</nav>
 
       </header>
